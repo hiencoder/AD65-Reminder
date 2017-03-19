@@ -1,5 +1,10 @@
 package com.example.mrphonglinh.ad65_reminder;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.app.TimePickerDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,6 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.example.mrphonglinh.ad65_reminder.adapter.ReminderAdapter;
@@ -18,9 +24,12 @@ import com.example.mrphonglinh.ad65_reminder.dialog.DialogAddRemind;
 import com.example.mrphonglinh.ad65_reminder.dialog.DialogDeleteReminder;
 import com.example.mrphonglinh.ad65_reminder.dialog.DialogEditReminder;
 import com.example.mrphonglinh.ad65_reminder.model.Reminder;
+import com.example.mrphonglinh.ad65_reminder.receiver.ReminderAlarmReceiver;
 import com.example.mrphonglinh.ad65_reminder.utils.ReminderDBAdapter;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity{
     private ListView listView;
@@ -100,8 +109,43 @@ public class MainActivity extends AppCompatActivity{
                 dialogDeleteReminder = new DialogDeleteReminder(this,rmSelected,reminderDBAdapter);
                 dialogDeleteReminder.show();
                 break;
+            case R.id.menu_scheduler:
+                //show ra timepicker dialog
+                showTimePickerDialog();
+                break;
         }
         return super.onContextItemSelected(item);
+    }
+
+    //Ham xu ly hien thi timepicker dialog
+    private void showTimePickerDialog() {
+        //Su dung ngay hom nay la thoi gian co ban de bao thuc
+        //Hop thoai lua chon thoi gian cho phep chon gio, phut
+        final Date today = new Date();
+        TimePickerDialog.OnTimeSetListener listener = new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                Date alarm = new Date(today.getYear(),today.getMonth(),today.getDate(), hourOfDay,minute);
+
+                //Goi phuong thuc schedulerReminder() de hien thi noi dung bao thuc va thoi gian
+                schedulerReminder(alarm.getTime(), rmSelected.getContent());
+            }
+        };
+
+        TimePickerDialog timePickerDialog = new TimePickerDialog(this,
+                listener,
+                Calendar.HOUR_OF_DAY,
+                Calendar.MINUTE,
+                true);
+        timePickerDialog.show();
+    }
+
+    private void schedulerReminder(long time, String content) {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent alarmIntent = new Intent(this, ReminderAlarmReceiver.class);
+        alarmIntent.putExtra(ReminderAlarmReceiver.REMINDER_TEXT,content);
+        PendingIntent broadcast = PendingIntent.getBroadcast(this,0,alarmIntent,0);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, time, broadcast);
     }
 
     @Override

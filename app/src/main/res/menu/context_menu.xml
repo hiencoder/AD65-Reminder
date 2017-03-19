@@ -4,4 +4,6 @@
         android:title="Edit Reminder"/>
     <item android:id="@+id/menu_delete"
         android:title="Delete Reminder"/>
+    <item android:id="@+id/menu_scheduler"
+        android:title="Scheduler Reminder"/>
 </menu>
